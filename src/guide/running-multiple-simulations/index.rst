@@ -1,12 +1,12 @@
 .. _ensembles:
 
-Running Multiple Simulations
+运行多个模拟
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-FLAME GPU 2 provides :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` as a facility for executing batch runs of multiple configurations of a model.
+FLAME GPU 2 提供 :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` 作为执行模型多个配置的批量运行的工具。
 
 
-Creating a CUDAEnsemble
+创建 a CUDAEnsemble
 -----------------------
 
 An ensemble is a group of simulations executed in batch, optionally using all available GPUs. To use an ensemble, construct a :class:`RunPlanVector<flamegpu::RunPlanVector>` and :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` instead of a :class:`CUDASimulation<flamegpu::CUDASimulation>`.

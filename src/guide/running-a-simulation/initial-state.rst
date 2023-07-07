@@ -1,113 +1,112 @@
-Overriding the Initial State
+覆盖初始状态
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When executing a FLAME GPU model its common to wish to override parts of the initial environment or provide a predefined agent population.
+运行FLAME GPU模型时，通常希望覆盖部分初始环境或提供预定义的代理群体。
 
 With Code
 ---------
 
-Overriding initial states in code is more flexible than from state files, allowing dynamic control of the initial state. For example it could be used execute models as part of a genetic algorithm.
-
+在代码中覆盖初始状态比从状态文件中覆盖初始状态更灵活，从而允许动态控制初始状态。 例如，它可以用来执行模型作为遗传算法的一部分。
 
 .. _RunPlan:
 
-Overriding the Initial Environment
+覆盖初始环境
 ==================================
 
-The recommended method to override the initial state of a model is by executing it using a :class:`RunPlan<flamegpu::RunPlan>`.
+覆盖模型初始状态的推荐方法是使用:class:`RunPlan<flamegpu::RunPlan>`。
 
-This class allows you to configure a collection of environment property overrides. It can then be passed to :func:`simulate()<void flamegpu::CUDASimulation::simulate(const RunPlan &)>`, to execute the model using the provided overrides.
+该类允许您配置环境属性用以覆盖默认的环境设置。 然后将覆盖后的设置传递给:func:`simulate()<void flamegpu::CUDASimulation::simulate(const RunPlan &)>`，用以在模型中运行。
 
-:class:`RunPlan<flamegpu::RunPlan>` provides :func:`setProperty()<flamegpu::RunPlan::setProperty>` in the same format as elsewhere in FLAME GPU, to set the overrides.
+:class:`RunPlan<flamegpu::RunPlan>` 提供 :func:`setProperty()<flamegpu::RunPlan::setProperty>` 与FLAME GPU中其他地方相同格式的，来覆盖设置。
     
-Additionally a :class:`RunPlan<flamegpu::RunPlan>` holds the number of simulation steps and random seed to be used for the simulation, these replace any configuration specified via command-line or by manually setting the configs so they should normally be configured using :func:`setRandomSimulationSeed()<flamegpu::RunPlan::setRandomSimulationSeed>` and :func:`setSteps()<flamegpu::RunPlan::setSteps>` respectively.
+此外 :class:`RunPlan<flamegpu::RunPlan>` 保存了用于模拟的步骤数和随机种子，它们可以替换通过命令行或者手动设置等方式设置的任何配置，因此通常应分别用:func:`setRandomSimulationSeed()<flamegpu::RunPlan::setRandomSimulationSeed>` 和 :func:`setSteps()<flamegpu::RunPlan::setSteps>` 进行配置。
     
 .. tabs::
 
   .. code-tab:: cpp C++
   
-    // Create a RunPlan to override the initial environment
+    // 创建一个 RunPlan 来覆盖初始环境
     flamegpu::RunPlan plan(model);
     plan.setRandomSimulationSeed(123456);
     plan.setSteps(3600);
     plan.setProperty<float>("speed", 12.0f);
     plan.setProperty<float, 3>("origin", {5.0f, 0.0f, 5.0f});
   
-    // Create a simulation object from the model
+    // 从模型创建模拟对象
     flamegpu::CUDASimulation simulation(model);
 
-    // Configure the simulation
+    // 配置模拟
     ...
     
-    // Run the simulation using the overrides from the RunPlan
+    // 使用 RunPlan 中的覆盖运行模拟
     simulation.simulate(plan);
 
   .. code-tab:: py Python
 
-    # Create a RunPlan to override the initial environment
+    # 创建一个 RunPlan 来覆盖初始环境
     plan = pyflamegpu.RunPlan(model)
     plan.setRandomSimulationSeed(123456)
     plan.setSteps(3600)
     plan.setPropertyFloat("speed", 12.0)
     plan.setPropertyArrayFloat("origin", 3, [5.0, 0.0, 5.0])
     
-    # Create a simulation object from the model
+    # 从模型创建模拟对象
     simulation = pyflamegpu.CUDASimulation(model)
 
-    # Configure the Simulation
+    # 配置模拟
     ...
 
-    # Run the simulation using the overrides from the RunPlan
+    # 使用 RunPlan 中的覆盖运行模拟
     simulation.simulate(plan)
     
 .. note::
 
-  The Python method ``RunPlan::setPropertyArray()`` currently requires the second argument of array length, this is inconsistent with other uses. `(issue) <https://github.com/FLAMEGPU/FLAMEGPU2/issues/831>`_
+  Python 方法 ``RunPlan::setPropertyArray()`` 目前需要数组长度的第二个参数，这与其他用途不一致。 `(issue) <https://github.com/FLAMEGPU/FLAMEGPU2/issues/831>`_
     
-Alternate Technique
+替代技术
 ~~~~~~~~~~~~~~~~~~~
 
-You can also directly override the value of environment properties, by calling :func:`setEnvironmentProperty()<flamegpu::CUDASimulation::setEnvironmentProperty>` directly on the :class:`CUDASimulation<flamegpu::CUDASimulation>` instance. Again, these methods have the same usage as ``setProperty()`` found in :class:`RunPlan<flamegpu::RunPlan>`, :class:`HostEnvironment<flamegpu::HostEnvironment>` and elsewhere.
+您还可以通过直接在:class:`CUDASimulation<flamegpu::CUDASimulation>` 实例上调用 :func:`setEnvironmentProperty()<flamegpu::CUDASimulation::setEnvironmentProperty>` 来直接覆盖环境属性的值。 同样，这些方法与:class:`RunPlan<flamegpu::RunPlan>`, :class:`HostEnvironment<flamegpu::HostEnvironment>` 和其他地方的 ``setProperty()``具有相同的用法.
 
-This allows finer grained control than a :class:`RunPlan<flamegpu::CUDASimulation>`, as it can be called at any time to modify the current simulation state (e.g. if stepping the model manually, you could call it between steps).
+这允许比 :class:`RunPlan<flamegpu::CUDASimulation>`，更细粒度的控制，因为可以随时调用它来修改当前模拟状态（例如，如果手动步进模型，您可以在步骤之间调用它）。
 
 .. tabs::
 
   .. code-tab:: cpp C++
   
-    // Create a simulation object from the model
+    // 从模型创建模拟对象
     flamegpu::CUDASimulation simulation(model);
     
-    // Override some environment properties
+    // 覆盖一些环境属性
     simulation.setEnvironmentProperty<float>("speed", 12.0f);
     simulation.setEnvironmentProperty<float, 3>("origin", {5.0f, 0.0f, 5.0f});
 
-    // Configure the remainder of the simulation
+    // 配置模拟的其余部分
     ...
     
-    // Run the simulation using the overrides from the RunPlan
+    // 使用 RunPlan 中的覆盖运行模拟
     simulation.simulate(plan);
 
   .. code-tab:: py Python
     
-    # Create a simulation object from the model
+    # 从模型创建模拟对象
     simulation = pyflamegpu.CUDASimulation(model)
 
-    # Create a RunPlan to override the initial environment
+    # 创建一个 RunPlan 来覆盖初始环境
     simulation.setEnvironmentPropertyFloat("speed", 12.0)
     simulation.setEnvironmentPropertyArrayFloat("origin", [5.0, 0.0, 5.0])
     
-    # Configure the remainder of the Simulation
+    # 配置模拟的其余部分
     ...
 
-    # Run the simulation using the overrides from the RunPlan
+    # 使用 RunPlan 中的覆盖运行模拟
     simulation.simulate(plan)
 
 
-Setting Initial Agent Populations
+设置初始代理数量
 =================================
 
-If you are unable to generate your agent populations within an initialisation function, as detailed in :ref:`Host Agent Creation<Host Agent Creation>`, you can create an :class:`AgentVector<flamegpu::AgentVector>` for each agent state population and pass them to the :class:`CUDASimulation<flamegpu::CUDASimulation>`.
+如果您无法在初始化函数中生成代理群体（如主机代理创建中:ref:`Host Agent Creation<Host Agent Creation>`所述），您可以为每个代理状态群体创建一个:class:`AgentVector<flamegpu::AgentVector>` ，并将它们传递给:class:`CUDASimulation<flamegpu::CUDASimulation>`。
 
 
 An :class:`AgentVector<flamegpu::AgentVector>` is created by passing it's constructor an :class:`AgentDescription<flamegpu::AgentDescription>` and optionally the initial size of the vector which will create the specified number of default initialised agents.
