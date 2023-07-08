@@ -1,9 +1,9 @@
 .. _Collecting Data:
 
-Collecting Data
+收集数据
 ^^^^^^^^^^^^^^^
 
-After your simulation has completed, you probably want to get some data back. FLAME GPU provides two methods of achieving this: Logging which can reduce a large simulation state down to the most important data points, and export of the entire simulation state.
+模拟完成后，您可能想要取回一些数据。 FLAME GPU 提供了两种实现此目的的方法：记录日志，可以将大型模拟状态减少到最重要的数据点，以及导出整个模拟状态。
 
 Logging
 -------

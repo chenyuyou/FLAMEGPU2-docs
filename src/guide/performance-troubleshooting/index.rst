@@ -1,21 +1,14 @@
-Performance Troubleshooting
+性能故障检查排除
 ===========================
 
-For the best performance you should be using a Release build of FLAME GPU 2 and your model, with ``FLAMEGPU_SEATBELTS`` set to ``OFF`` at CMake configure time. These runtime checks can be very expensive, so they are best disabled after development when high-performance is required.
+为了获得最佳性能，您应该使用 FLAME GPU 2 的发布版本和您的模型，并在 CMake 配置时将 ``FLAMEGPU_SEATBELTS`` 设置为 ``OFF`` 。 这些运行时检查可能非常昂贵，因此最好在开发后需要高性能时禁用它们。
 
 
+**为什么我的代码比同等 CPU 版本慢？**
+对于少量代理，GPU 代码可能比其等效的 CPU 代码慢。 这是因为与 GPU 之间传输数据的开销，以及 CPU 具有更高的单个线程性能的事实。 随着种群规模的增加，GPU 的规模将显着超过 CPU，因为它能够同时执行更多的计算。
 
-**Why is my code slower than the equivalent CPU version?**
-For a small number of agents, the GPU code may be slower than its equivalent CPU code. This is because of the overheads of transferring data
-to and from the GPU, and the fact that CPUs have higher individual thread performance. As you increase your population size, the GPU
-will outscale the CPU dramatically as it is able to carry out many more computations at once.
+**随着代理数量的增加，我的程序速度急剧下降**
+如果您发现您的程序扩展性很差，请考虑您是否使用了最合适的消息通信策略。随着代理数量的增加，Brute force 消息传递的扩展性会很差。 考虑是否可以使用存储桶或空间消息传递。
 
-**My program slows down dramatically as I increase the number of agents**
-If you find your program is scaling poorly, consider whether you are using the most appropriate message communication strategy. 
-Brute force messaging will scale poorly as the number of agents increases. Consider whether bucket or spatial messaging could be 
-used instead.
-
-**My program is still slow**
-Consider whether you can adapt your model and its algorithms to increase the parallelism. Serial components will almost always be
-slower than parallel ones. If your program is still slow and you are unsure why, you could consider using the NVIDIA profiling 
-tools to see which parts of your code are consuming the most runtime.
+**我的程序仍然很慢**
+考虑是否可以调整模型及其算法以增加并行性。 串行组件几乎总是比并行组件慢。 如果您的程序仍然很慢并且您不确定原因，您可以考虑使用 NVIDIA 分析工具来查看代码的哪些部分消耗的运行时间最多。

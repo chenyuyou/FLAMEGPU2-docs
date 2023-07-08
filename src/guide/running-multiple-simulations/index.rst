@@ -9,9 +9,9 @@ FLAME GPU 2 提供 :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` 作为执行模
 创建 a CUDAEnsemble
 -----------------------
 
-An ensemble is a group of simulations executed in batch, optionally using all available GPUs. To use an ensemble, construct a :class:`RunPlanVector<flamegpu::RunPlanVector>` and :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` instead of a :class:`CUDASimulation<flamegpu::CUDASimulation>`.
+集成是一组批量执行的模拟，可以选择使用所有可用的GPU。要使用集成，请构造:class:`RunPlanVector<flamegpu::RunPlanVector>`和:class:`CUDAEnsemble<flamegpu::CUDAEnsemble>`而不是 :class:`CUDASimulation<flamegpu::CUDASimulation>`。
 
-First you must define a model as usual, followed by creating a :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>`:
+首先，您必须像往常一样定义模型，然后创建 :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>`：
 
 .. tabs::
 
@@ -19,137 +19,138 @@ First you must define a model as usual, followed by creating a :class:`CUDAEnsem
   
     flamegpu::ModelDescription model("example model");
     
-    // Fully define the model
+    // 完全定义模型
     ...
     
-    // Create a CUDAEnsemble
+    // 创建 CUDAEnsemble
     flamegpu::CUDAEnsemble ensemble(model);
-    // Handle any runtime args
+    // 处理任何运行时参数
     ensemble.initialise(argc, argv);
 
   .. code-tab:: python
   
     model = pyflamegpu.ModelDescription("example model")
     
-    # Fully define the model
+    # 完全定义模型
     ...
     
-    # Create a CUDAEnsemble
+    # 创建 CUDAEnsemble
     ensemble = pyflamegpu.CUDAEnsemble(model)
-    # Handle any runtime args
+    # 处理任何运行时参数
     ensemble.initialise(sys.argv)
 
 
-Creating a RunPlanVector
+创建 RunPlanVector
 ------------------------
 
-:class:`RunPlanVector<flamegpu::RunPlanVector>` is a data structure which can be used to build run configurations, specifying; simulation speed, steps and initialising environment properties. These are a ``std::vector`` of :class:`RunPlan<flamegpu::RunPlan>` (which was introduced in the :ref:`previous chapter<RunPlan>`), with some additional methods included to enable easy configuration of batches of runs.
+:class:`RunPlanVector<flamegpu::RunPlanVector>`是一种数据结构，可用于构建运行配置，比如模拟速度、步骤和初始化环境属性。 这些是``std::vector`` 的:class:`RunPlan<flamegpu::RunPlan>` （在前一章中介绍过:ref:`previous chapter<RunPlan>`），其中包含一些附加方法，可以轻松配置批量运行。
 
-Operations performed on the vector, will apply to all elements, whereas individual elements can also be updated directly.
+对向量执行的操作将应用于所有元素，而单个元素也可以直接更新。 
 
-It is also possible to specify subdirectories for a particular runs' logging output to be sent to, this can be useful when constructing large batch runs or parameter sweeps:
+还可以为要发送到的特定运行的日志输出指定子目录，这在构建大批量运行或参数扫描时非常有用：
 
 
 .. tabs::
 
   .. code-tab:: cpp C++
   
-    // Create a template run plan
+    // 创建模板运行计划
     flamegpu::RunPlanVector runs_control(model, 128);
-    // Ensure that repeated runs use the same Random values within the RunPlans
+    // 确保重复运行在运行计划中使用相同的随机值
     runs_control.setRandomPropertySeed(34523);
-    {  // Initialise values across the whole vector
-        // All runs require 3600 steps
+    {  // 初始化整个向量的值
+        // 所有跑步都需要 3600 步
         runs_control.setSteps(3600);
-        // Random seeds for each run should take the values (12, 13, 14, 15, etc)
+        // 每次运行的随机种子应采用值（12、13、14、15 等）
         runs_control.setRandomSimulationSeed(12, 1);
-        // Initialise environment property 'lerp_float' with values uniformly distributed between 1 and 128
+        // 使用 1 到 128 之间均匀分布的值初始化环境属性“lerp_float” 
         runs_control.setPropertyLerpRange<float>("lerp_float", 1.0f, 128.0f);
         
-        // Initialise environment property 'random_int' with values uniformly distributed in the range [0, 10]
+        // 使用均匀分布在 [0, 10] 范围内的值初始化环境属性“random_int” 
         runs_control.setPropertyUniformRandom<int>("random_int", 0, 10);
-        // Initialise environment property 'random_float' with values from the normal dist (mean: 1, stddev: 2)
+        // 使用正常分布中的值初始化环境属性“random_float”（平均值：1，stddev：2）
         runs_control.setPropertyNormalRandom<float>("random_float", 1.0f, 2.0f);
-        // Initialise environment property 'random_double' with values from the log normal dist (mean: 2, stddev: 1)
+        // 使用日志正态分布中的值初始化环境属性“random_double”（平均值：2，stddev：1）
         runs_control.setPropertyLogNormalRandom<double>("random_double", 2.0, 1.0);
         
-        // Initialise environment property array 'int_array_3' with [1, 3, 5]
+        // 使用 [1, 3, 5] 初始化环境属性数组 'int_array_3'
         runs_control.setProperty<int, 3>("int_array_3", {1, 3, 5});
         
-        // Iterate vector to manually assign properties
+        // 迭代向量以手动分配属性
         for (RunPlan &plan:runs_control) {
-            // e.g. manually set all 'manual_float' to 32
+            // 例如 手动将所有“manual_float”设置为 32
             plan.setProperty<float>("manual_float", 32.0f);
         }        
     }
-    // Create an empty RunPlanVector, that we will construct by mutating and copying runs_control several times  
+    // 创建一个空的 RunPlanVector，我们将通过多次变异和复制 running_control 来构造它
     flamegpu::RunPlanVector runs(model, 0);
     for (const float &mutation : {0.2f, 0.5f, 0.8f, 1.5f, 1.9f, 2.5f}) {
-        // Dynamically generate a name for mutation sub directory
-        char subdir[24];
+        // 动态生成突变子目录的名称 char subdir[24]；
         sprintf(subdir, "mutation_%g", mutation);
         runs_control.setOutputSubdirectory(subdir);
-        // Fill in specialised parameters
+        // 填写专门参数
         runs_control.setProperty<float>("mutation", mutation);                    
-        // Append to the main run plan vector
+        // 附加到主运行计划向量
         runs += runs_control;
     }
 
   .. code-tab:: py Python
   
-    # Create a template run plan
+    # 创建模板运行计划
     runs_control = pyflamegpu.RunPlanVector(model, 128)
-    # Ensure that repeated runs use the same Random values within the RunPlans
+    # 确保重复运行在运行计划中使用相同的随机值
     runs_control.setRandomPropertySeed(34523)
-    # Initialise values across the whole vector
-    # All runs require 3600 steps
+    # 初始化整个向量的值
+    # 所有跑步都需要 3600 步
     runs_control.setSteps(3600)
-    # Random seeds for each run should take the values (12, 13, 14, 15, etc)
+    # 每次运行的随机种子应采用值（12、13、14、15 等）
     runs_control.setRandomSimulationSeed(12, 1)
-    # Initialise environment property 'lerp_float' with values uniformly distributed between 1 and 128
+    # 使用 1 到 128 之间均匀分布的值初始化环境属性“lerp_float”
     runs_control.setPropertyLerpRangeFloat("lerp_float", 1.0, 128.0)
     
-    # Initialise environment property 'random_int' with values uniformly distributed in the range [0, 10]
+    # 使用均匀分布在 [0, 10] 范围内的值初始化环境属性“random_int” 
     runs_control.setPropertyUniformRandomInt("random_int", 0, 10)
-    # Initialise environment property 'random_float' with values from the normal dist (mean: 1, stddev: 2)
+    # 使用正常分布中的值初始化环境属性“random_float”（平均值：1，stddev：2）
     runs_control.setPropertyNormalRandomFloat("random_float", 1.0, 2.0)
-    # Initialise environment property 'random_double' with values from the log normal dist (mean: 2, stddev: 1)
+    # 使用日志正态分布中的值初始化环境属性“random_double”（平均值：2，stddev：1）
     runs_control.setPropertyLogNormalRandomDouble("random_double", 2.0, 1.0)
     
-    # Initialise environment property array 'int_array_3' with [1, 3, 5]
+    #  使用 [1, 3, 5] 初始化环境属性数组 'int_array_3'
     runs_control.setPropertyArrayInt("int_array_3", (1, 3, 5))
     
-    # Iterate vector to manually assign properties
+    # 迭代向量以手动分配属性
     for plan in runs_control:
-        # e.g. manually set all 'manual_float' to 32
+        # 例如 手动将所有“manual_float”设置为 32
         plan.setPropertyFloat("manual_float", 32.0)
   
-    # Create an empty RunPlanVector, that we will construct by mutating and copying runs_control several times
+    # 创建一个空的 RunPlanVector，我们将通过多次变异和复制 running_control 来构造它
     runs = pyflamegpu.RunPlanVector(model, 0)
     for mutation in [0.2, 0.5, 0.8, 1.5, 1.9, 2.5]:
-        # Dynamically generate a name for mutation sub directory
+        # 动态生成突变子目录的名称
         runs_control.setOutputSubdirectory("mutation_%g"%(mutation))
-        # Fill in specialised parameters
+        # 填写专门参数
         runs_control.setPropertyFloat("mutation", mutation)
-        # Append to the main run plan vector
+        # 附加到主运行计划向量
         runs += runs_control
     
-Creating a Logging Configuration
+创建日志记录配置
 --------------------------------
-Next you need to decide which data will be collected, as it is not possible to export full agent states from a :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>`.
+:class:`CUDAEnsemble<flamegpu::CUDAEnsemble>`.
 
-A short example is shown below, however you should refer to the :ref:`previous chapter<Configuring Data to be Logged>` for the comprehensive guide.
+接下来，您需要决定将收集哪些数据，因为不可能从:ref:`previous chapter<Configuring Data to be Logged>`导出完整的代理状态。
 
-One benefit of using :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` to carry out experiments, is that the specific :class:`RunPlan<flamegpu::RunPlan>` data is included in each log file, allowing them to be automatically processed and used for reproducible research. However, this does not identify the particular version or build of your model. 
+下面显示了一个简短的示例，但是您应该参考前一章以获得全面的指南。
+
+使用:class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` 进行实验的好处之一是，特定的:class:`RunPlan<flamegpu::RunPlan>`数据包含在每个日志文件中，允许自动处理它们并用于可重复的研究。 但是，这并不能识别模型的特定版本或版本。
 
 .. tabs::
 
   .. code-tab:: cpp C++
   
-    // Specify the desired LoggingConfig or StepLoggingConfig
+    // 指定所需的 LoggingConfig 或 StepLoggingConfig
     flamegpu::StepLoggingConfig step_log_cfg(model);
     {
-        // Log every step (not available to LoggingConfig, for exit logs)
+        // 记录每个步骤（不适用于 LoggingConfig，用于退出日志）
         step_log_cfg.setFrequency(1);
         step_log_cfg.logEnvironment("random_float");
         step_log_cfg.agent("boid").logCount();
@@ -158,16 +159,16 @@ One benefit of using :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` to carry out 
     flamegpu::LoggingConfig exit_log_cfg(model);
     exit_log_cfg.logEnvironment("lerp_float");
     
-    // Pass the logging configs to the CUDAEnsemble
+    // 
     cuda_ensemble.setStepLog(step_log_cfg);
     cuda_ensemble.setExitLog(exit_log_cfg);
 
   .. code-tab:: py Python
   
-    # Specify the desired LoggingConfig or StepLoggingConfig
+    # 指定所需的 LoggingConfig 或 StepLoggingConfig
     step_log_cfg = pyflamegpu.StepLoggingConfig(model);
 
-    #Log every step (not available to LoggingConfig, for exit logs)
+    # 记录每个步骤（不适用于 LoggingConfig，用于退出日志）
     step_log_cfg.setFrequency(1);
     step_log_cfg.logEnvironment("random_float");
     step_log_cfg.agent("boid").logCount();
@@ -176,47 +177,47 @@ One benefit of using :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` to carry out 
     exit_log_cfg = pyflamegpu.LoggingConfig (model)
     exit_log_cfg.logEnvironment("lerp_float")
     
-    # Pass the logging configs to the CUDAEnsemble
+    # 将日志配置传递给 CUDAEnsemble
     cuda_ensemble.setStepLog(step_log_cfg)
     cuda_ensemble.setExitLog(exit_log_cfg)
     
-Configuring & Running the Ensemble
+配置和运行 Ensemble
 ----------------------------------
 
 Now you can execute the :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` from the command line, using the below parameters, it will execute the runs and log the collected data to file.
 
 ============================== =========================== ========================================================
-Long Argument                  Short Argument              Description
+完整的参数                      缩写的参数                   描述
 ============================== =========================== ========================================================
-``--help``                     ``-h``                      Print the command line guide and exit.
-``--devices`` <device ids>     ``-d`` <device ids>         Comma separated list of GPU ids to be used to execute the ensemble.
-                                                           By default all devices will be used.
-``--concurrent`` <runs>        ``-c`` <runs>               The number of concurrent simulations to run per GPU.
-                                                           By default 4 concurrent simulations will run per GPU.
-``--out`` <directory> <format> ``-o`` <directory> <format> Directory and format (JSON/XML) for ensemble logging.
-``--quiet``                    ``-q``                      Don't print ensemble progress to console.
-``--verbose``                  ``-v``                      Print config, progress and timing (-t) information to console.
-``--timing``                   ``-t``                      Output timing information to console at exit.
-``--silence-unknown-args``     ``-u``                      Silence warnings for unknown arguments passed after this flag.
-``--error``                    ``-e`` <error level>        The :enum:`ErrorLevel<flamegpu::CUDAEnsemble::EnsembleConfig::ErrorLevel>` to use: 0, 1, 2, "off", "slow" or "fast".
-                                                           By default the :enum:`ErrorLevel<flamegpu::CUDAEnsemble::EnsembleConfig::ErrorLevel>` will be set to "slow" (1).
-``--standby``                                              Allow the operating system to enter standby during ensemble execution.
-                                                           The standby blocking feature is currently only supported on Windows, where it is enabled by default.
+``--help``                     ``-h``                      打印命令行指南并退出。
+``--devices`` <device ids>     ``-d`` <device ids>         用于执行集成的 GPU ID 的逗号分隔列表。
+                                                           默认情况下将使用所有设备。
+``--concurrent`` <runs>        ``-c`` <runs>               每个 GPU 运行的并发模拟数量。
+                                                           默认情况下，每个 GPU 将运行 4 个并发模拟。
+``--out`` <directory> <format> ``-o`` <directory> <format> 用于集成日志记录的目录和格式 (JSON/XML)。
+``--quiet``                    ``-q``                      不要将集成进度打印到控制台。
+``--verbose``                  ``-v``                      将配置、进度和计时 (-t) 信息打印到控制台。
+``--timing``                   ``-t``                      在退出时将计时信息输出到控制台。
+``--silence-unknown-args``     ``-u``                      在此标志之后传递的未知参数的静默警告。
+``--error``                    ``-e`` <error level>        :enum:`ErrorLevel<flamegpu::CUDAEnsemble::EnsembleConfig::ErrorLevel>` 用于: 0, 1, 2, "off", "slow" or "fast".
+                                                           默认情况下 :enum:`ErrorLevel<flamegpu::CUDAEnsemble::EnsembleConfig::ErrorLevel>` 设置为 "slow" (1).
+``--standby``                                              允许操作系统在整体执行期间进入待机状态。
+                                                           待机阻止功能目前仅在 Windows 上受支持，并且默认情况下处于启用状态。
 ============================== =========================== ========================================================
 
-You may also wish to specify your own defaults, by setting the values prior to calling :func:`initialise()<flamegpu::CUDAEnsemble::initialise>`:
+您可能还希望通过在调用:func:`initialise()<flamegpu::CUDAEnsemble::initialise>`之前设置值来指定自己的默认值：
 
 .. tabs::
 
   .. code-tab:: cpp C++
   
-    // Fully declare a ModelDescription, RunPlanVector and LoggingConfig/StepLoggingConfig
+    // 完全声明 ModelDescription、RunPlanVector 和 LoggingConfig/StepLoggingConfig
     ...
     
-    // Create a CUDAEnsemble to run the RunPlanVector
+    // 创建 CUDAEnsemble 来运行 RunPlanVector
     flamegpu::CUDAEnsemble ensemble(model);
     
-    // Override config defaults
+    // 覆盖配置默认值
     ensemble.Config().out_directory = "results";
     ensemble.Config().out_format = "json";
     ensemble.Config().concurrent_runs = 1;
@@ -224,26 +225,26 @@ You may also wish to specify your own defaults, by setting the values prior to c
     ensemble.Config().error_level = CUDAEnsemble::EnsembleConfig::Fast;
     ensemble.Config().devices = {0};
     
-    // Handle any runtime args 
-    // If this is instead performed before overriding defaults, overridden args will be ignored from command line
+    // 处理任何运行时参数
+    // 如果在覆盖默认值之前执行此操作，则命令行将忽略覆盖的参数
     ensemble.initialise(argc, argv);
     
-    // Pass the logging configs to the CUDAEnsemble
+    // 将日志配置传递给 CUDAEnsemble
     cuda_ensemble.setStepLog(step_log_cfg);
     cuda_ensemble.setExitLog(exit_log_cfg);
     
-    // Execute the ensemble using the specified RunPlans
+    // 使用指定的 RunPlan 执行集成
     const unsigned int errs = ensemble.simulate(runs);
 
   .. code-tab:: py Python
     
-    # Fully declare a ModelDescription, RunPlanVector and LoggingConfig/StepLoggingConfig
+    # 完全声明 ModelDescription、RunPlanVector 和 LoggingConfig/StepLoggingConfig
     ...
     
-    # Create a CUDAEnsemble to execute the RunPlanVector
+    # 创建 CUDAEnsemble 来运行 RunPlanVector
     ensemble = pyflamegpu.CUDAEnsemble(model);
     
-    # Override config defaults
+    # 覆盖配置默认值
     ensemble.Config().out_directory = "results"
     ensemble.Config().out_format = "json"
     ensemble.Config().concurrent_runs = 1
@@ -251,44 +252,44 @@ You may also wish to specify your own defaults, by setting the values prior to c
     ensemble.Config().error_level = pyflamegpu.CUDAEnsembleConfig.Fast
     ensemble.Config().devices = pyflamegpu.IntSet([0])
     
-    # Handle any runtime args 
-    # If this is instead performed before overriding defaults, overridden args will be ignored from command line
+    # 处理任何运行时参数
+    # 如果在覆盖默认值之前执行此操作，则命令行将忽略覆盖的参数
     ensemble.initialise(sys.argv)
     
-    # Pass the logging configs to the CUDAEnsemble
+    # 将日志配置传递给 CUDAEnsemble
     cuda_ensemble.setStepLog(step_log_cfg)
     cuda_ensemble.setExitLog(exit_log_cfg)
     
-    # Execute the ensemble using the specified RunPlans
+    # 使用指定的 RunPlan 执行集成
     errs = ensemble.simulate(runs)
     
-Error Handling Within Ensembles
+集成内的错误处理
 -------------------------------
 
-:class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` has three supported levels of error handling.
+:class:`CUDAEnsemble<flamegpu::CUDAEnsemble>` 有三个错误处理级别。
 
 ====== ===== ==========================================================================================================
-Level  Name  Description
+层级   名称   描述
 ====== ===== ==========================================================================================================
-0      Off   Runs which fail do not cause an exception to be raised.
-1      Slow  If any runs fail, an :class:`EnsembleError<flamegpu::exception::EnsembleError>` will be raised after all runs have been attempted.
-2      Fast  An :class:`EnsembleError<flamegpu::exception::EnsembleError>` will be raised as soon as a failed run is detected, cancelling remaining runs.
+0      Off   失败的运行不会导致引发异常。
+1      Slow  如果任何运行失败，则在尝试所有运行后将引发:class:`EnsembleError<flamegpu::exception::EnsembleError>`。
+2      Fast  一旦检测到失败的运行，就会引发:class:`EnsembleError<flamegpu::exception::EnsembleError>`，并取消剩余的运行。
 ====== ===== ==========================================================================================================
 
-The default error level is "Slow" (1), which will cause an exception to be raised if any of the simulations fail to complete. However, all simulations will be attempted first, so partial results will be available.
+默认错误级别为“慢”(1)，如果任何模拟无法完成，这将导致引发异常。 但是，将首先尝试所有模拟，因此将提供部分结果。
 
-Alternatively, calls to :func:`simulate()<flamegpu::CUDAEnsemble::simulate>` return the number of errors, when the error level is set to "Off" (0). Therefore, failed runs can be probed manually via checking that the return value of :func:`simulate()<flamegpu::CUDAEnsemble::simulate>` does not equal zero.
+或者，当错误级别设置为“关闭”(0) 时，对 :func:`simulate()<flamegpu::CUDAEnsemble::simulate>`的调用会返回错误数。 因此，可以通过检查simulate()的返回值不等于0来手动探测失败的运行。
 
   
-Related Links
+相关链接
 -------------
-* User Guide: :ref:`Overriding the Initial Environment<RunPlan>` (:class:`RunPlan<flamegpu::RunPlan>` guide)
-* User Guide: :ref:`Configuring Data to be Logged<Configuring Data to be Logged>`
-* Full API documentation for :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>`
-* Full API documentation for :class:`CUDAEnsemble::EnsembleConfig<flamegpu::CUDAEnsemble::EnsembleConfig>`
-* Full API documentation for :class:`CUDASimulation<flamegpu::CUDASimulation>`
-* Full API documentation for :class:`RunPlanVector<flamegpu::RunPlanVector>`
-* Full API documentation for :class:`RunPlan<flamegpu::RunPlan>`
-* Full API documentation for :class:`LoggingConfig<flamegpu::LoggingConfig>`
-* Full API documentation for :class:`AgentLoggingConfig<flamegpu::AgentLoggingConfig>`
-* Full API documentation for :class:`StepLoggingConfig<flamegpu::StepLoggingConfig>`
+* 用户指南: :ref:`Overriding the Initial Environment<RunPlan>` (:class:`RunPlan<flamegpu::RunPlan>` 指南)
+* 用户指南: :ref:`Configuring Data to be Logged<Configuring Data to be Logged>`
+* 完整的 API 文档 :class:`CUDAEnsemble<flamegpu::CUDAEnsemble>`
+* 完整的 API 文档 :class:`CUDAEnsemble::EnsembleConfig<flamegpu::CUDAEnsemble::EnsembleConfig>`
+* 完整的 API 文档 :class:`CUDASimulation<flamegpu::CUDASimulation>`
+* 完整的 API 文档 :class:`RunPlanVector<flamegpu::RunPlanVector>`
+* 完整的 API 文档 :class:`RunPlan<flamegpu::RunPlan>`
+* 完整的 API 文档 :class:`LoggingConfig<flamegpu::LoggingConfig>`
+* 完整的 API 文档 :class:`AgentLoggingConfig<flamegpu::AgentLoggingConfig>`
+* 完整的 API 文档 :class:`StepLoggingConfig<flamegpu::StepLoggingConfig>`
