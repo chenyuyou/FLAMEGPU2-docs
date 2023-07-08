@@ -5,23 +5,23 @@
 
 模拟完成后，您可能想要取回一些数据。 FLAME GPU 提供了两种实现此目的的方法：记录日志，可以将大型模拟状态减少到最重要的数据点，以及导出整个模拟状态。
 
-Logging
+记录
 -------
 
-As Simulations are likely to involve thousands to millions of agents, logging the full simulation state would produce large amounts of output most of which is not required. As such, FLAME GPU provides the ability to specify a collection of population level reductions and environment properties to be logged each step or at simulation exit.
+由于模拟可能涉及数千到数百万个代理，因此记录完整的模拟状态将产生大量输出，其中大部分是不需要的。 FLAME GPU提供了指定在每一步模拟时或在模拟结束时记录的群体级统计归约和环境属性集合的功能。
 
 .. _Configuring Data to be Logged:
 
-Configuring Data to be Logged
+配置要记录的数据
 =============================
 
-To define a logging config, you should create either a :class:`LoggingConfig<flamegpu::LoggingConfig>` or :class:`StepLoggingConfig<flamegpu::StepLoggingConfig>`, passing your :class:`ModelDescription<flamegpu::ModelDescription>` to the constructor. These two classes share the same interface for specifying data to be logged, however :class:`StepLoggingConfig<flamegpu::StepLoggingConfig>` additionally allows you to call :func:`setFrequency()<flamegpu::StepLoggingConfig::setFrequency>` to adjust how often steps are logged (default 1, every step).
+要定义日志记录配置，您应该创建:class:`LoggingConfig<flamegpu::LoggingConfig>`或  :class:`StepLoggingConfig<flamegpu::StepLoggingConfig>`，并将 :class:`ModelDescription<flamegpu::ModelDescription>`传递给构造函数。 这两个类共享相同的接口来指定要记录的数据，但是:class:`StepLoggingConfig<flamegpu::StepLoggingConfig>` 还允许您调用 :func:`setFrequency()<flamegpu::StepLoggingConfig::setFrequency>`来调整记录步骤的频率（默认为 1，每个步骤）。
 
-Environment properties are logged with :func:`logEnvironment()<flamegpu::LoggingConfig::logEnvironment>`, specifying the property's name. Unlike most FLAME GPU variable and property methods, the type does not need to be specified here.
+环境属性通过:func:`logEnvironment()<flamegpu::LoggingConfig::logEnvironment>`进行记录，并指定属性的名称。 与大多数 FLAME GPU 变量和属性方法不同，这里不需要指定类型。
 
-Agent data is logged according to agent state, so agent's with multiple states must have the config specified for each state required to be logged. The total number of agents in the state can be logged with :func:`logCount()<flamegpu::AgentLoggingConfig::logCount>`. Or variable reductions can be logged with; :func:`logMean()<flamegpu::AgentLoggingConfig::logMean>`, :func:`logStandardDev()<flamegpu::AgentLoggingConfig::logStandardDev>`, :func:`logMin()<flamegpu::AgentLoggingConfig::logMin>`, :func:`logMax()<flamegpu::AgentLoggingConfig::logMax>`, :func:`logSum()<flamegpu::AgentLoggingConfig::logSum>` specifying the variable's name and type (in the same form as used throughout the API).
+代理数据根据代理状态进行记录，因此具有多个状态的代理必须为需要记录的每个状态指定配置。 可以使用 :func:`logCount()<flamegpu::AgentLoggingConfig::logCount>` 记录处于该状态的代理总数。 或者可以记录变量减少；  :func:`logMean()<flamegpu::AgentLoggingConfig::logMean>`、:func:`logStandardDev()<flamegpu::AgentLoggingConfig::logStandardDev>`、:func:`logMin()<flamegpu::AgentLoggingConfig::logMin>`、:func:`logMax()<flamegpu::AgentLoggingConfig::logMax>`、:func:`logSum()<flamegpu::AgentLoggingConfig::logSum>`指定变量的名称和类型（与整个 API 中使用的形式相同）。
 
-Once setup, the logging configs are passed to the :class:`CUDASimulation<flamegpu::CUDASimulation>` using :func:`setStepLog()<flamegpu::CUDASimulation::setStepLog>` and :func:`setExitLog()<flamegpu::CUDASimulation::setExitLog>`.
+设置完成后，日志记录配置将使用:func:`setStepLog()<flamegpu::CUDASimulation::setStepLog>`  和  :func:`setExitLog()<flamegpu::CUDASimulation::setExitLog>`传递到 :class:`CUDASimulation<flamegpu::CUDASimulation>`。
 
 .. tabs::
 
@@ -30,214 +30,214 @@ Once setup, the logging configs are passed to the :class:`CUDASimulation<flamegp
     
     flamegpu::ModelDescription model("example model");
     
-    // Fully define the model
+    // 完全定义模型
     ... 
     
-    // Specify the desired LoggingConfig or StepLoggingConfig
+    // 指定所需的 LoggingConfig 或 StepLoggingConfig
     flamegpu::StepLoggingConfig step_log_cfg(model);
     {
-        // Log every step (not available to LoggingConfig, for exit logs)
+        // 记录每个步骤（不适用于 LoggingConfig，用于退出日志）
         step_log_cfg.setFrequency(1);
-        // Include the environment property 'env_prop' in the logged data
+        // 在记录的数据中包含环境属性“env_prop”
         step_log_cfg.logEnvironment("env_prop");
-        // Include the current number of 'boid' agents, within the default state
+        // 包括默认状态下“boid”代理的当前数量
         step_log_cfg.agent("boid").logCount();
-        // Include the current number of 'boid' agents, within the 'alive' state
+        // 包括当前处于“活动”状态的“boid”代理数量
         step_log_cfg.agent("boid", "alive").logCount();
-        // Include the mean of the boid agents population's variable 'speed', within the default state
+        // 包括默认状态下 boid 代理群体的变量“速度”的平均值
         step_log_cfg.agent("boid").logMean<float>("speed");
-        // Include the standard deviation of the boid agent population's variable 'speed', within the default state
+        // 在默认状态下包含 boid 代理群体变量“速度”的标准差
         step_log_cfg.agent("boid").logStandardDev<float>("speed");
-        // Include the min and max of the boid agent population's variable 'speed', within the default state
+        // 包括默认状态下 boid 代理群体变量“速度”的最小值和最大值
         step_log_cfg.agent("boid").logMin<float>("speed");
         step_log_cfg.agent("boid").logMax<float>("speed");
-        // Include the sum of the boid agent population's variable 'health', within the 'alive' state
+        // 包括“活跃”状态下 boid 代理群体的变量“健康”总和
         step_log_cfg.agent("boid", "alive").logSum<int>("health");
     }
     
-    // Create the CUDASimulation instance
+    // 创建 CUDASimulation 实例
     flamegpu::CUDASimulation cuda_sim(model);
     
-    // Attach the logging config/s
+    // 附加日志记录配置
     cuda_sim.setStepLog(step_log_cfg);
     // cuda_sim.setExitLog(exit_log_cfg);
     
-    // Run the simulation as normal
+    // 正常运行模拟
     cuda_sim.simulate();
 
   .. code-tab:: py Python    
     
     model = pyflamegpu.ModelDescription("example model")
     
-    # Fully define the model
+    # 完全定义模型
     ...
     
-    # Specify the desired LoggingConfig or StepLoggingConfig
+    # 指定所需的 LoggingConfig 或 StepLoggingConfig
     step_log_cfg = flamegpu.StepLoggingConfig(model)
-    # Log every step (not available to LoggingConfig, for exit logs)
+    # 记录每个步骤（不适用于 LoggingConfig，用于退出日志）
     step_log_cfg.setFrequency(1)
-    # Include the environment property 'env_prop' in the logged data
+    # 在记录的数据中包含环境属性“env_prop”
     step_log_cfg.logEnvironment("env_prop")
-    # Include the current number of 'boid' agents, within the default state
+    # 包括默认状态下“boid”代理的当前数量
     step_log_cfg.agent("boid").logCount()
-    # Include the current number of 'boid' agents, within the 'alive' state
+    # 包括当前处于“活动”状态的“boid”代理数量
     step_log_cfg.agent("boid", "alive").logCount()
-    # Include the mean of the boid agent population's variable 'speed', within the default state
+    # 包括默认状态下 boid 代理群体的变量“速度”的平均值
     step_log_cfg.agent("boid").logMeanFloat("speed")
-    # Include the standard deviation of the boid agent population's variable 'speed', within the default state
+    # 在默认状态下包含 boid 代理群体变量“速度”的标准差
     step_log_cfg.agent("boid").logStandardDevFloat("speed")
-    # Include the min and max of the boid agent population's variable 'speed', within the default state
+    # 包括默认状态下 boid 代理群体变量“速度”的最小值和最大值
     step_log_cfg.agent("boid").logMinFloat("speed")
     step_log_cfg.agent("boid").logMaxFloat("speed")
-    # Include the sum of the boid agent population's variable 'health', within the 'alive' state
+    # 包括“活跃”状态下 boid 代理群体的变量“健康”总和
     step_log_cfg.agent("boid", "alive").logSumInt("health")
     
-    # Create the CUDASimulation instance
+    # 创建 CUDASimulation 实例
     cuda_sim = flamegpu.CUDASimulation(model)
     
-    # Attach the logging config/s
+    # 附加日志记录配置
     cuda_sim.setStepLog(step_log_cfg)
     # cuda_sim.setExitLog(exit_log_cfg)
     
-    # Run the simulation as normal
+    # 正常运行模拟
     cuda_sim.simulate()
 
 
-Accessing Collected Data
+访问收集的数据
 ========================
 
-After configuring a :class:`CUDASimulation<flamegpu::CUDASimulation>` to use specific logging configs, and executing the simulation, the log can be accessed via code using :func:`getRunLog()<flamegpu::Simulation::getRunLog>`. This returns a :class:`RunLog<flamegpu::RunLog>` which contains the step and exit log data that was requested.
+将 :class:`CUDASimulation<flamegpu::CUDASimulation>` 配置为使用特定的日志记录配置并执行模拟后，可以使用 :func:`getRunLog()<flamegpu::Simulation::getRunLog>` 通过代码访问日志。 这将返回一个 :class:`RunLog<flamegpu::RunLog>`，其中包含所请求的步骤和退出日志数据。
 
-Performance data is always attached to the requested logs, so can be accessed if required.
+性能数据始终附加到请求的日志中，因此可以根据需要进行访问。
 
 .. tabs::
 
   .. code-tab:: cpp C++
     
-    // Attach the logging config/s
+    // 附加日志记录配置
     cuda_sim.setStepLog(step_log_cfg);
     cuda_sim.setExitLog(exit_log_cfg);
     
-    // Run the simulation as normal
+    // 正常运行模拟
     cuda_sim.simulate();
     
-    // Fetch the logged data
+    // 获取记录的数据
     flamegpu::RunLog run_log = cuda_sim.getRunLog();
     
-    // Get the random seed used
+    // 获取使用的随机种子
     uint64_t rng_seed = run_log.getRandomSeed();
-    // Get the step logging frequency
+    // 获取步数记录频率
     unsigned int step_log_freqency = run_log.getStepLogFrequency();
     
-    // Access the step and exit log data
-    // The step and exit logs will be empty, if a respective logging config was not specified.
+    // 访问步骤和退出日志数据
+    // 如果未指定相应的日志记录配置，则步骤和退出日志将为空。
     flamegpu::LogFrame exit_log = run_log.getExitLog();
     std::list<flamegpu::LogFrame> step_log = run_log.getStepLog();
     
-    // Iterate the step log and print some information to console
+    // 迭代步骤日志并将一些信息打印到控制台
     for (auto &log:step_log) {
-        // Get the step index
+        // 获取步骤索引
         unsigned int step_count = log.getStepCount();
-        // Get a logged environment property
+        // 获取记录的环境属性
         int env_prop = log.getEnvironmentProperty<int>("env_prop");
-        // Get logged boid agent property reduction data, from the default state
+        // 从默认状态获取记录的 boid 代理属性减少数据
         unsigned int agent_count = log.getAgent("boid").getCount();
-        // Reduce operators upcast the return type to the most suitable to not lose data
+        // Reduce 运算符将返回类型向上转换为最合适的类型，以免丢失数据
         double agent_speed_mean = log.getAgent("boid").getMean("speed");
-        // Print data to console
+        // 将数据打印到控制台
         printf("#%u: %u, %f\n", step+count, agent_count, agent_speed_mean);
     }
 
   .. code-tab:: py Python
   
-    # Attach the logging config/s
+    # 附加日志记录配置
     cuda_sim.setStepLog(step_log_cfg)
     cuda_sim.setExitLog(exit_log_cfg)
     
-    # Run the simulation as normal
+    # 正常运行模拟
     cuda_sim.simulate()
     
-    # Fetch the logged data
+    # 获取记录的数据
     run_log = cuda_sim.getRunLog();
     
-    # Get the random seed used
+    # 获取使用的随机种子
     rng_seed = run_log.getRandomSeed();
-    # Get the step logging frequency
+    # 获取步数记录频率
     step_log_freqency = run_log.getStepLogFrequency();
     
-    # Access the step and exit log data
-    # The step and exit logs will be empty, if a respective logging config was not specified.
+    # 访问步骤和退出日志数据
+    # 如果未指定相应的日志记录配置，则步骤和退出日志将为空。
     exit_log = run_log.getExitLog();
     step_log = run_log.getStepLog();
     
-    # Iterate the step log and print some information to console
+    # 迭代步骤日志并将一些信息打印到控制台
     for log in step_log:
-        # Get the step index
+        # 获取步骤索引
         unsigned int step_count = log.getStepCount();
-        # Get a logged environment property
+        # 获取记录的环境属性
         int env_prop = log.getEnvironmentPropertyInt("env_prop")
-        # Get logged boid agent property reduction data, from the default state
+        # 从默认状态获取记录的 boid 代理属性减少数据
         unsigned int agent_count = log.getAgent("boid").getCount()
-        # Reduce operators upcast the return type to the most suitable to not lose data
+        # Reduce 运算符将返回类型向上转换为最合适的类型，以免丢失数据
         double agent_speed_mean = log.getAgent("boid").getMean("speed")
-        # Print data to console
+        # 将数据打印到控制台
         print("#%u: %u, %f"%(step+count, agent_count, agent_speed_mean))
         
 
-Writing Collected Data to File
+将收集的数据写入文件
 ==============================
 
-Instead of processing logged data at runtime, you can store it to file for post-processing at a later time.
+您可以将其存储到文件中以便稍后进行后处理，而不是在运行时处理记录的数据。
 
-Normally you would handle this via the :class:`Simulation::Config<flamegpu::Simulation::Config>` as detailed in the :ref:`earlier section<Configuring Execution>`. However, you can also call :func:`exportLog()<flamegpu::Simulation::exportLog>` on the :class:`CUDASimulation<flamegpu::CUDASimulation>`, to manually trigger the export.
+通常，您可以通过:ref:`earlier section<Configuring Execution>` 来处理此问题，如前面部分所述。 但是，您也可以在 :class:`CUDASimulation<flamegpu::CUDASimulation>`上调用 :func:`exportLog()<flamegpu::Simulation::exportLog>`来手动触发导出。
 
 .. tabs::
 
   .. code-tab:: cpp C++
     
-    // Attach the logging config/s
+    // 附加日志记录配置
     cuda_sim.setStepLog(step_log_cfg);
     cuda_sim.setExitLog(exit_log_cfg);
     
-    // Run the simulation as normal
+    // 正常运行模拟
     cuda_sim.simulate();
     
-    // Export the logged data to file
+    // 将记录的数据导出到文件
     cuda_sim.exportLog(
-      "log.json", // The file to output (must end '.json' or '.xml')
-      true,       // Whether the step log should be included in the log file
-      true,       // Whether the exit log should be included in the log file
-      true,       // Whether the step time should be included in the log file (treated as false if step log not included)
-      true,       // Whether the simulation time should be included in the log file (treated as false if exit log not included)
-      false       // Whether the log file should be minified or not
+      "log.json", // 要输出的文件（必须以“.json”或“.xml”结尾）
+      true,       // 步骤日志是否应包含在日志文件中
+      true,       // 退出日志是否应包含在日志文件中
+      true,       // 日志文件中是否应包含步骤时间（如果不包含步骤日志，则视为 false）
+      true,       // 是否应将模拟时间包含在日志文件中（如果不包含退出日志则视为 false）
+      false       // 是否应缩小日志文件
     );
 
   .. code-tab:: py Python
   
-    # Attach the logging config/s
+    # 附加日志记录配置
     cuda_sim.setStepLog(step_log_cfg)
     cuda_sim.setExitLog(exit_log_cfg)
     
-    # Run the simulation as normal
+    # 正常运行模拟
     cuda_sim.simulate()
         
-    # Export the logged data to file
+    # 将记录的数据导出到文件
     cuda_sim.exportLog(
-      "log.json", # The file to output (must end '.json' or '.xml')
-      True,       # Whether the step log should be included in the log file
-      True,       # Whether the exit log should be included in the log file
-      True,       # Whether the step time should be included in the log file (treated as false if step log not included)
-      True,       # Whether the simulation time should be included in the log file (treated as false if exit log not included)
-      False)      # Whether the log file should be minified or not
+      "log.json", # 要输出的文件（必须以“.json”或“.xml”结尾）
+      True,       # 步骤日志是否应包含在日志文件中
+      True,       # 退出日志是否应包含在日志文件中
+      True,       # 日志文件中是否应包含步骤时间（如果不包含步骤日志，则视为 false）
+      True,       # 是否应将模拟时间包含在日志文件中（如果不包含退出日志则视为 false）
+      False)      # 是否应缩小日志文件
   
 
-Accessing the Complete Agent State
+访问完整的代理状态
 ----------------------------------
 
-In some limited cases, you may want to directly access a full agent population. This can only be achieved in code, either by directly accessing the agent data or manually triggering the export to file.
+在某些有限的情况下，您可能希望直接访问完整的代理群体。 这只能通过代码来实现，可以通过直接访问代理数据或手动触发导出到文件。
 
 
-Similar to specifying an initial agent population, you can fetch an agent state population to an :class:`AgentVector<flamegpu::AgentVector>`.
+与指定初始代理群体类似，您可以将代理状态群体获取到 :class:`AgentVector<flamegpu::AgentVector>`.
 
 .. tabs::
 
@@ -246,18 +246,18 @@ Similar to specifying an initial agent population, you can fetch an agent state 
     flamegpu::ModelDescription model("example model");
     flamegpu::AgentDescription boid_agent = model.newAgent("boid");
     
-    // Fully define the model & setup the CUDASimulation
+    // 完全定义模型并设置 CUDASimulation
     ...
     
-    // Run the simulation as normal
-    // step() could also be used to access the agent state, on a per step basis
+    // 正常运行模拟
+    // step() 还可以用于在每个步骤的基础上访问代理状态
     cuda_sim.simulate();
     
-    // Copy the boid agent data, from the default state, to an agent vector
+    // 将 boid 代理数据从默认状态复制到代理向量
     flamegpu::AgentVector out_pop(boid_agent);
     cuda_sim.getPopulationData(out_pop);
     
-    // Iterate the agents, and print their speed
+    // 迭代代理并打印它们的速度
     for (flamegpu::AgentVector::Agent &boid : out_pop) {
         printf("Speed: %f\n", boid.getVariable<float>("speed"));
     }
@@ -267,22 +267,22 @@ Similar to specifying an initial agent population, you can fetch an agent state 
     model = pyflamegpu.ModelDescription("example model");
     boid_agent = model.newAgent("boid");
     
-    # Fully define the model & setup the CUDASimulation
+    # 完全定义模型并设置 CUDASimulation
     ... 
     
-    # Run the simulation as normal
-    # step() could also be used to access the agent state, on a per step basis
+    # 正常运行模拟
+    # step() 还可以用于在每个步骤的基础上访问代理状态
     cuda_sim.simulate()
     
-    # Copy the boid agent data, from the default state, to an agent vector
+    # 将 boid 代理数据从默认状态复制到代理向量
     out_pop = pyflamegpu.AgentVector(boid_agent)
     cuda_sim.getPopulationData(out_pop)
     
-    # Iterate the agents, and print their speed
+    # 迭代代理并打印它们的速度
     for boid in out_pop:
         print("Speed: %f"%(boid.getVariableFloat("speed"))
 
-Alternatively, :func:`exportData()<flamegpu::Simulation::exportData>` can be called to export the full simulation state to file (all agent variables and environment properties).
+或者，可以调用:func:`exportData()<flamegpu::Simulation::exportData>`将完整的模拟状态导出到文件（所有代理变量和环境属性）。
 
 .. tabs::
 
@@ -291,11 +291,11 @@ Alternatively, :func:`exportData()<flamegpu::Simulation::exportData>` can be cal
     flamegpu::ModelDescription model("example model");
     flamegpu::AgentDescription boid_agent = model.newAgent("boid");
     
-    // Fully define the model & setup the CUDASimulation
+    // 完全定义模型并设置 CUDASimulation
     ...
     
-    // Run the simulation as normal
-    // step() could also be used to access the agent state, on a per step basis
+    // 正常运行模拟
+    // step() 还可以用于在每个步骤的基础上访问代理状态
     cuda_sim.simulate();
     
     // Log the simulation state to JSON/XML file
@@ -306,32 +306,32 @@ Alternatively, :func:`exportData()<flamegpu::Simulation::exportData>` can be cal
     model = pyflamegpu.ModelDescription("example model");
     boid_agent = model.newAgent("boid");
     
-    // Fully define the model & setup the CUDASimulation
+    // 完全定义模型并设置 CUDASimulation
     ...
     
-    # Run the simulation as normal
-    # step() could also be used to access the agent state, on a per step basis
+    # 正常运行模拟
+    # step() 还可以用于在每个步骤的基础上访问代理状态
     cuda_sim.simulate()
     
     # Log the simulation state to JSON/XML file
     cuda_sim.exportData("end.json")
 
-Additional Notes
+附加说明
 ----------------
 
-At the time of writing it is not possible to log or export Environment Macro Properties, doing so would require manually outputting them via an init, step or exit function.
+在撰写本文时，无法记录或导出环境宏属性，这样做需要通过 init、step 或 exit 函数手动输出它们。
 
 
-Related Links
+相关链接
 -------------
-* User Guide Page: :ref:`Configuring Execution<Configuring Execution>`
-* Full API documentation for :class:`LoggingConfig<flamegpu::LoggingConfig>`
-* Full API documentation for :class:`AgentLoggingConfig<flamegpu::AgentLoggingConfig>`
-* Full API documentation for :class:`StepLoggingConfig<flamegpu::StepLoggingConfig>`
-* Full API documentation for :class:`RunLog<flamegpu::RunLog>`
-* Full API documentation for :class:`AgentVector<flamegpu::AgentVector>`
-* Full API documentation for :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`
-* Full API documentation for :class:`AgentVector::CAgent<flamegpu::AgentVector_CAgent>` (Read-only superclass of :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`)
-* Full API documentation for :class:`CUDASimulation<flamegpu::CUDASimulation>`
-* Full API documentation for :class:`Simulation<flamegpu::Simulation>`
-* Full API documentation for :class:`Simulation::Config<flamegpu::Simulation::Config>`
+* 用户指南页面: :ref:`Configuring Execution<Configuring Execution>`
+* 完整的 API 文档 :class:`LoggingConfig<flamegpu::LoggingConfig>`
+* 完整的 API 文档 :class:`AgentLoggingConfig<flamegpu::AgentLoggingConfig>`
+* 完整的 API 文档 :class:`StepLoggingConfig<flamegpu::StepLoggingConfig>`
+* 完整的 API 文档 :class:`RunLog<flamegpu::RunLog>`
+* 完整的 API 文档 :class:`AgentVector<flamegpu::AgentVector>`
+* 完整的 API 文档 :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`
+* 完整的 API 文档 :class:`AgentVector::CAgent<flamegpu::AgentVector_CAgent>` (Read-only superclass of :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`)
+* 完整的 API 文档 :class:`CUDASimulation<flamegpu::CUDASimulation>`
+* 完整的 API 文档 :class:`Simulation<flamegpu::Simulation>`
+* 完整的 API 文档 :class:`Simulation::Config<flamegpu::Simulation::Config>`
