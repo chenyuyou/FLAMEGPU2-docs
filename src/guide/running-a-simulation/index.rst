@@ -1,49 +1,49 @@
 .. _Running a Simulation:
 
-Running a Simulation
+运行模拟
 ====================
-Once you have a fully described model, it's time to create and execute a simulation.
+一旦您有了完整描述的模型，就可以创建并执行模拟了。
 
+为了执行模型，必须通过传递完整的模型描述来创建 :class:`CUDASimulation<flamegpu::CUDASimulation>` 。 然后，:class:`CUDASimulation<flamegpu::CUDASimulation>`  创建自己的:class:`ModelDescription<flamegpu::ModelDescription>`副本，因此进一步的更改不会影响模拟。
 
-In order to execute a model a :class:`CUDASimulation<flamegpu::CUDASimulation>` must be created by passing it your completed :class:`ModelDescription<flamegpu::ModelDescription>`. The :class:`CUDASimulation<flamegpu::CUDASimulation>` then creates it's own copy of the :class:`ModelDescription<flamegpu::ModelDescription>`, so further changes will not affect the simulation.
+然后可以通过调用:func:`simulate()<flamegpu::CUDASimulation::simulate>`来执行模拟：
 
-The simulation can then be executed by calling :func:`simulate()<flamegpu::CUDASimulation::simulate>`:
 
 .. tabs::
 
   .. code-tab:: cpp C++
   
-    // Fully declare a model
+    // 完全声明模型
     flamegpu::ModelDescription model("example model");
     ...
      
-    // Create a simulation object from the model
+    // 从模型创建模拟对象
     flamegpu::CUDASimulation simulation(model);
 
-    // Configure the simulation
+    // 配置模拟
     ...
     
-    // Run the simulation
+    // 运行模拟
     simulation.simulate();
 
   .. code-tab:: py Python
 
-    # Fully declare a model
+    # 完全声明模型
     model = pyflamegpu.ModelDescription("example model")
     ...
     
-    # Create a simulation object from the model
+    # 从模型创建模拟对象
     simulation = pyflamegpu.CUDASimulation(model)
 
-    # Configure the Simulation
+    # 配置模拟
     ...
 
-    # Run the simulation
+    # 运行模拟
     simulation.simulate()
 
-This is the most simple case, however normally a simulation needs to be configured, to select simulation option, override the initial state and specify data to be collected.
+这是最简单的情况，但通常需要配置模拟，选择模拟选项，覆盖初始状态并指定要收集的数据。
 
-This chapter has been broken up into several sections detailing these features:
+本章分为几个部分，详细介绍了这些功能：
 
 .. toctree::
    :maxdepth: 1
@@ -53,4 +53,4 @@ This chapter has been broken up into several sections detailing these features:
    collecting-data.rst
    
 
-Additionally, a visualisation can be configured, however that is covered in it's :ref:`own chapter<Visualisation>`.
+此外，还可以配置可视化，但这在它自己的章节（:ref:`own chapter<Visualisation>`）中进行了介绍。

@@ -1,6 +1,6 @@
 .. _Telemetry:
 
-Telemetry
+遥测
 =========
 
 Support for academic software is dependant on evidence of impact. Without evidence it is difficult/impossible to justify investment to add features and provide maintenance. We collect a minimal amount of anonymous usage data so that we can gather usage statistics that enable us to continue to develop the software under a free and permissible licence.

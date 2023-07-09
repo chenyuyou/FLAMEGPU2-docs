@@ -108,86 +108,87 @@ With Code
 
 如果您无法在初始化函数中生成代理群体（如主机代理创建中:ref:`Host Agent Creation<Host Agent Creation>`所述），您可以为每个代理状态群体创建一个:class:`AgentVector<flamegpu::AgentVector>` ，并将它们传递给:class:`CUDASimulation<flamegpu::CUDASimulation>`。
 
+:class:`AgentVector<flamegpu::AgentVector>` 是通过向其构造函数传递 :class:`AgentDescription<flamegpu::AgentDescription>` 以及可选的向量初始大小来创建的，这将创建指定数量的默认初始化代理。
 
-An :class:`AgentVector<flamegpu::AgentVector>` is created by passing it's constructor an :class:`AgentDescription<flamegpu::AgentDescription>` and optionally the initial size of the vector which will create the specified number of default initialised agents.
+:class:`AgentVector<flamegpu::AgentVector>` 接口是根据 C++ 的 ``std::vector`` 建模的，其元素类型为 :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`。 然而，内部数据以数组结构格式存储。
 
-The interface :class:`AgentVector<flamegpu::AgentVector>` is modelled after C++'s ``std::vector``, with elements of type :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`. However, internally data is stored in a structure-of-arrays format.  
+:class:`AgentVector::Agent<flamegpu::AgentVector_Agent>` 然后具有在库中其他位置找到的标准 :func:`setVariable()<flamegpu::AgentVector_Agent::setVariable>` 和  :func:`getVariable()<flamegpu::AgentVector_CAgent::getVariable>` 方法。
 
-:class:`AgentVector::Agent<flamegpu::AgentVector_Agent>` then has the standard :func:`setVariable()<flamegpu::AgentVector_Agent::setVariable>` and :func:`getVariable()<flamegpu::AgentVector_CAgent::getVariable>` methods found elsewhere in the library.
+一旦 :class:`AgentVector<flamegpu::AgentVector>`  准备就绪，就可以将其传递给 :class:`CUDASimulation<flamegpu::CUDASimulation>` 上的 :func:`setPopulationData()<flamegpu::CUDASimulation::setPopulationData>`。 如果您使用多个代理状态，则还需要指定所需的代理状态作为第二个参数。
 
-Once the :class:`AgentVector<flamegpu::AgentVector>` is ready, it can be passed to :func:`setPopulationData()<flamegpu::CUDASimulation::setPopulationData>` on the :class:`CUDASimulation<flamegpu::CUDASimulation>`. If your are using multiple agent states, it is also necessary to specify the desired agent state as the second argument.
 
 .. tabs::
 
   .. code-tab:: cpp C++
     
-    // Create a population of 1000 'Boid' agents
+    // 创建 1000 个“Boid”代理群体
     flamegpu::AgentVector population(model.Agent("Boid"), 1000);
     
-    // Manually initialise the "speed" variable in each agent
+    // 手动初始化每个代理中的“速度”变量
     for (flamegpu::AgentVector::Agent &instance : population) {
         instance.setVariable<float>("speed", 1.0f);
     }
     
-    // Specifically set the 12th agent's variable differently
+    // 具体设置第12个代理的变量不同
     population[11].setVariable<float>("speed", 0.0f);
     
-    // Set the "Boid" population in the default state with the AgentVector
+    // 使用 AgentVector 将“Boid”群体设置为默认状态
     simulation.setPopulationData(population);
-    // Set the "Boid" population in the "healthy" state with the AgentVector
+    // 使用 AgentVector 将“Boid”群体设置为“健康”状态
     // simulation.setPopulationData(population, "healthy");
   .. code-tab:: py Python
     
-    # Create a population of 1000 'Boid' agents
+    # 创建 1000 个“Boid”代理群体
     population = pyflamegpu.AgentVector(model.Agent("Boid"), 1000)
     
+    # 手动初始化每个代理中的“速度”变量
     for instance in population:
         instance.setVariableFloat("speed", 1.0)
         
-    # Specifically set the 12th agent's variable differently
+    # 具体设置第12个代理的变量不同
     population[11].setVariableFloat("speed", 0.0)
     
-    # Set the "Boid" population in the default state with the AgentVector
+    # 使用 AgentVector 将“Boid”群体设置为默认状态
     simulation.setPopulationData(population)
-    # Set the "Boid" population in the "healthy" state with the AgentVector
+    # 使用 AgentVector 将“Boid”群体设置为“健康”状态
     # simulation.setPopulationData(population, "healthy")
         
     
 .. _Initial State From File:
 
-From File
+从文件
 ---------
 
-FLAME GPU 2 simulations can be initialised from disk using either the XML or JSON format. The XML format is compatible with the previous FLAME GPU 1 input/output files, whereas the JSON format is new to FLAME GPU 2. In both cases, the input and output file formats are the same.
+FLAME GPU 2 模拟可以使用 XML 或 JSON 格式从磁盘初始化。 XML 格式与之前的 FLAME GPU 1 输入/输出文件兼容，而 JSON 格式是 FLAME GPU 2 的新格式。在这两种情况下，输入和输出文件格式相同。
 
-Loading simulation state (agent data and environment properties) from file can be achieved via either command line specification, or explicit specification within the code for the model. (See the :ref:`previous section<Configuring Execution>` for more information)
+从文件加载模拟状态（代理数据和环境属性）可以通过命令行规范或模型代码中的显式规范来实现。 （更多信息请参阅上一节）
 
-In most cases, the input file will be taken from command line which can be passed using ``-i <input file>``.
+在大多数情况下，输入文件将从命令行获取，可以使用 ``-i <input file>``传递。
 
-Agent IDs must be unique when the file is loaded from disk, otherwise an ``AgentIDCollision`` exception will be thrown. This must be corrected in the input file, as there is no method to do so within FLAME GPU at runtime.
+从磁盘加载文件时，代理 ID 必须是唯一的，否则将引发 ``AgentIDCollision`` 异常。 这必须在输入文件中纠正，因为在运行时 FLAME GPU 中没有方法可以这样做。
 
-In most cases, components of the input file are optional and can be omitted if defaults are preferred. If agents are not assigned IDs within the input file, they will be automatically generated.
+在大多数情况下，输入文件的组件是可选的，如果首选默认值，则可以省略。 如果在输入文件中没有为代理分配 ID，则会自动生成它们。
 
-Simulation state output files produces by FLAME GPU are compatible for use as input files. However, if working with large agent populations they are likely to be prohibitively large due to their human-readable format.
+FLAME GPU 生成的模拟状态输出文件兼容用作输入文件。 然而，如果与大量代理群体一起工作，由于其人类可读的格式，它们可能会大得令人望而却步。
 
 
-File Format
+文件格式
 ===========
 
 =================== ============================================================================================
-Block               Description
+块                  描述
 =================== ============================================================================================
-``itno``            **XML Only** This block provides the step number in XML output files, it is included for backwards compatibility with FLAMEGPU 1. It has no use for input.
-``config``          This block is split into sub-blocks ``simulation`` and ``cuda``, the members of each sub-block align with :class:`Simulation::Config<flamegpu::Simulation::Config>` and :class:`CUDASimulation::Config<flamegpu::CUDASimulation::Config>` members of the same name respectively. These values are output to log the configuration, and can optionally be used to set the configuration via input file. (See the :ref:`Configuring Execution` guide for details of each individual member)
-``stats``           This block includes statistics collected by FLAME GPU 2 during execution. It has no purpose on input.
-``environment``     This block includes members of the environment, and can be used to configure the environment via input file. Members which begin with ``_`` are automatically created internal properties, which can be set via input file.
-``xagent``          **XML Only** Each ``xagent`` block represents a single agent, and the ``name`` and ``state`` values must match an agent state within the loaded model description hierarchy. Members which begin with ``_`` are automatically created internal variables, which can be set via input file.
-``agents``          **JSON Only** Within the ``agents`` block, a sub block may exist for each agent type, and within this a sub-block for each state type. Each state then maps to an array of object, where each object consists of a single agent's variables. Members which begin with ``_`` are automatically created internal variables, which can be set via input file.
+``itno``            **XML Only** 该块提供 XML 输出文件中的步骤号，包含它是为了向后兼容 FLAMEGPU 1。它对输入没有用处。
+``config``          该块被分成子块 ``simulation`` 和 ``cuda`` ，每个子块的成员分别与 :class:`Simulation::Config<flamegpu::Simulation::Config>` 和 :class:`CUDASimulation::Config<flamegpu::CUDASimulation::Config>` 同名成员对齐。 这些值被输出以记录配置，并且可以选择用于通过输入文件设置配置。（有关每个成员的详细信息，请参阅配置执行指南:ref:`Configuring Execution`） 
+``stats``           该块包含 FLAME GPU 2 在执行期间收集的统计信息。 它对输入没有任何目的。
+``environment``     该块包含环境成员，可用于通过输入文件配置环境。 以  ``_`` 开头的成员是自动创建的内部属性，可以通过输入文件设置。
+``xagent``          **XML Only** ``xagent`` 块表示单个代理，``name`` 和 ``state`` 值必须与加载的模型描述层次结构中的代理状态匹配。 以 ``_ `` 开头的成员是自动创建的内部变量，可以通过输入文件设置。
+``agents``          **JSON Only**   在 ``agents`` 块内，可以存在针对每种代理类型的子块，并且在该子块中针对每种状态类型存在子块。 然后，每个状态映射到一个对象数组，其中每个对象由单个代理的变量组成。 以 ``_`` 开头的成员是自动创建的内部变量，可以通过输入文件设置。
 =================== ============================================================================================
 
-The below code block displays example files output from FLAME GPU 2 in both XML and JSON formats, which could be used as input files.
+下面的代码块显示了 FLAME GPU 2 以 XML 和 JSON 格式输出的示例文件，这些文件可以用作输入文件。
 
-.. tabs::
+.. tabs::                           
 
   .. code-tab:: xml XML
 
@@ -294,11 +295,11 @@ The below code block displays example files output from FLAME GPU 2 in both XML 
     }
 
 
-Related Links
+相关链接
 -------------
-* User Guide Page: :ref:`Configuring Execution<Configuring Execution>`
-* Full API documentation for :class:`RunPlan<flamegpu::RunPlan>`
-* Full API documentation for :class:`AgentVector<flamegpu::AgentVector>` (``AgentVector::Agent``)
-* Full API documentation for :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`
-* Full API documentation for :class:`AgentVector::CAgent<flamegpu::AgentVector_CAgent>` (Read-only superclass of :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`)
-* Full API documentation for :class:`CUDASimulation<flamegpu::CUDASimulation>`
+* 用户指南页面: :ref:`Configuring Execution<Configuring Execution>`
+* 完整的 API 文档 :class:`RunPlan<flamegpu::RunPlan>`
+* 完整的 API 文档 :class:`AgentVector<flamegpu::AgentVector>` (``AgentVector::Agent``)
+* 完整的 API 文档 :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`
+* 完整的 API 文档 :class:`AgentVector::CAgent<flamegpu::AgentVector_CAgent>` (Read-only superclass of :class:`AgentVector::Agent<flamegpu::AgentVector_Agent>`)
+* 完整的 API 文档 :class:`CUDASimulation<flamegpu::CUDASimulation>`
